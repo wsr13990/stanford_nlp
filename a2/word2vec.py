@@ -64,7 +64,7 @@ def naiveSoftmaxLossAndGradient(
 	u_o = outsideVectors[outsideWordIdx,:]
 	p = softmax(uv)
 	loss = -np.log(p)[outsideWordIdx]
-	gradCenterVec = -outsideVectors[outsideWordIdx,:] - np.dot(p,outsideVectors)
+	gradCenterVec = -outsideVectors[outsideWordIdx,:] + np.dot(p,outsideVectors)
 	gradOutsideVecs = np.zeros(np.shape(outsideVectors)[1])
 	u_mean = np.zeros(np.shape(u_o))
 	gradOutsideVecs = np.zeros(np.shape(outsideVectors))
@@ -120,16 +120,22 @@ def negSamplingLossAndGradient(
 	### Please use your implementation of sigmoid in here.
 	#Use only necessary vector
 	if outsideWordIdx not in negSampleWordIndices :
-		outsideVectors = outsideVectors[indices,:]
-		uo = outsideVectors[0,:]
-		uk = outsideVectors[1:,:]
+		sampleoutsideVectors = outsideVectors[indices,:]
+		uo = sampleoutsideVectors[0,:]
+		uk = sampleoutsideVectors[1:,:]
 		sigmoid_uo_vc = sigmoid(np.dot(uo,centerWordVec))
 		sigmoid_neg_uk_vc = sigmoid(np.dot(-uk,centerWordVec))
 		term1 = np.log(sigmoid_uo_vc)
 		term2 = np.sum(np.log(sigmoid_neg_uk_vc))
 		loss = -term1 -term2
-		gradCenterVec = np.dot(sigmoid_uo_vc-1,uo)+np.sum(np.dot(sigmoid_neg_uk_vc-1,uk))
-		gradOutsideVecs = np.dot(sigmoid_uo_vc-1,uo)
+		gradCenterVec = -np.dot((-sigmoid_uo_vc+1),uo)+(np.dot((-sigmoid_neg_uk_vc+1),uk))
+#		gradOutsideVecs = -np.dot(-sigmoid_uo_vc+1,centerWordVec)
+		gradOutsideVecs = np.zeros(np.shape(outsideVectors))
+		for w in range(np.shape(outsideVectors)[0]):
+			if (w == outsideWordIdx):
+				gradOutsideVecs[w,:] = np.dot(-sigmoid_uo_vc+1,centerWordVec)
+			else:
+				gradOutsideVecs[w,:] = -np.dot(-sigmoid_neg_uk_vc[w]+1,centerWordVec)
 	else:
 		print('Error outsideWordIdx is in negSampleWordIndices')
 	### END YOUR CODE
